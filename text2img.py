@@ -1,4 +1,5 @@
 import click
+import datetime
 from diffusers import StableDiffusionOnnxPipeline, DDIMScheduler
 import numpy as np
 
