@@ -24,6 +24,8 @@ def run(
         provider="DmlExecutionProvider",
         scheduler=scheduler
     )
+    starttime = datetime.datetime.now()
+    # print(starttime)
     pipe.safety_checker = lambda images, **kwargs: (images, [False] * len(images)) # Disable the safety checker
     
     # Generate our own latents so that we can provide a seed.
@@ -32,7 +34,11 @@ def run(
 
     print(f"\nUsing a seed of {seed}")
     image = pipe(prompt, height=height, width=width, num_inference_steps=steps, guidance_scale=guidance_scale, latents=latents).images[0]
-    image.save("output.png")
+    endtime = datetime.datetime.now()
+    # print(endtime)
+    imagetime = endtime.strftime("%Y%m%d%H%M%S")
+    imagename = "output-" + imagetime + ".png"
+    image.save(imagename)
 
 def get_latents_from_seed(seed: int, width: int, height:int) -> np.ndarray:
     # 1 is batch size
