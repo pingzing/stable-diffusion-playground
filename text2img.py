@@ -10,13 +10,15 @@ import numpy as np
 @click.option("-st", "--steps", required=False, type=int, default=25)
 @click.option("-g", "--guidance-scale", required=False, type=float, default=7.5)
 @click.option("-s", "--seed", required=False, type=int, default=None)
+@click.option("-l", "--loop", required=False, type=int, default=1)
 def run(
     prompt: str, 
     width: int, 
     height: int, 
     steps: int, 
     guidance_scale: float, 
-    seed: int):
+    seed: int,
+    loop: int):
 
     scheduler = DDIMScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", num_train_timesteps=1000, tensor_format="np")
 
@@ -25,21 +27,26 @@ def run(
         provider="DmlExecutionProvider",
         scheduler=scheduler
     )
-    starttime = datetime.datetime.now()
-    # print(starttime)
-    pipe.safety_checker = lambda images, **kwargs: (images, [False] * len(images)) # Disable the safety checker
+    while loop > 0:
+        loop_output = str(loop)
+        starttime = datetime.datetime.now()
+        # print(starttime)
+        pipe.safety_checker = lambda images, **kwargs: (images, [False] * len(images)) # Disable the safety checker
     
-    # Generate our own latents so that we can provide a seed.
-    seed = np.random.randint(np.iinfo(np.int32).max) if seed is None else seed
-    latents = get_latents_from_seed(seed, width, height)
+        # Generate our own latents so that we can provide a seed.
+        seed = np.random.randint(np.iinfo(np.int32).max) if seed is None else seed
+        seed = seed + loop
+        latents = get_latents_from_seed(seed, width, height)
 
-    print(f"\nUsing a seed of {seed}")
-    image = pipe(prompt, height=height, width=width, num_inference_steps=steps, guidance_scale=guidance_scale, latents=latents).images[0]
-    endtime = datetime.datetime.now()
-    # print(endtime)
-    imagetime = endtime.strftime("%Y%m%d%H%M%S")
-    imagename = "output-" + imagetime + ".png"
-    image.save(imagename)
+        print(f"\nUsing a seed of {seed}")
+        print(f"Iterations left: {loop_output}")
+        image = pipe(prompt, height=height, width=width, num_inference_steps=steps, guidance_scale=guidance_scale, latents=latents).images[0]
+        endtime = datetime.datetime.now()
+        # print(endtime)
+        imagetime = endtime.strftime("%Y%m%d%H%M%S")
+        imagename = "output-" + imagetime + ".png"
+        image.save(imagename)
+        loop = loop - 1
 
 def get_latents_from_seed(seed: int, width: int, height:int) -> np.ndarray:
     # 1 is batch size
